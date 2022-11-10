@@ -20,9 +20,11 @@ pytz
 tox>=3.13
 twine
 wheel
-databend-py==0.0.8
+databend-py==0.1.2
 environs
 mysql-connector-python>=8.0.0,<8.1
+backports.zoneinfo==0.2.1
+backports.zoneinfo;python_version<"3.9"
 
 # Clickhouse sqlalchemy
 https://github.com/youngsofun/clickhouse-sqlalchemy/archive/a116e3162c699c12e63a689385b547f639c13018.zip

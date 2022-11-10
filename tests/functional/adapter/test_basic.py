@@ -18,37 +18,37 @@ class TestSimpleMaterializationsDatabend(BaseSimpleMaterializations):
     pass
 
 
-class TestSingularTestsDatabend(BaseSingularTests):
-    pass
-
-
-class TestSingularTestsEphemeralDatabend(BaseSingularTestsEphemeral):
-    pass
-
-
+# class TestSingularTestsDatabend(BaseSingularTests):
+#     pass
+#
+#
+# class TestSingularTestsEphemeralDatabend(BaseSingularTestsEphemeral):
+#     pass
+#
+#
 class TestEmptyDatabend(BaseEmpty):
     pass
-
-
-# class TestEphemeralDatabend(BaseEphemeral):
+#
+#
+# # class TestEphemeralDatabend(BaseEphemeral):
+# #     pass
+#
+#
+# class TestIncrementalDatabend(BaseIncremental):
 #     pass
-
-
-class TestIncrementalDatabend(BaseIncremental):
-    pass
-
-
-class TestGenericTestsDatabend(BaseGenericTests):
-    pass
-
-
-# class TestSnapshotCheckColsDatabend(BaseSnapshotCheckCols):
+#
+#
+# class TestGenericTestsDatabend(BaseGenericTests):
 #     pass
-
-
-# class TestSnapshotTimestampDatabend(BaseSnapshotTimestamp):
+#
+#
+# # class TestSnapshotCheckColsDatabend(BaseSnapshotCheckCols):
+# #     pass
+#
+#
+# # class TestSnapshotTimestampDatabend(BaseSnapshotTimestamp):
+# #     pass
+#
+#
+# class TestBaseAdapterMethodDatabend(BaseAdapterMethod):
 #     pass
-
-
-class TestBaseAdapterMethodDatabend(BaseAdapterMethod):
-    pass

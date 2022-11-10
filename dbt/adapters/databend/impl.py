@@ -14,7 +14,6 @@ from dbt.contracts.relation import RelationType
 from dbt.events import AdapterLogger
 from dbt.utils import executor
 
-
 import csv
 import io
 from dbt.adapters.databend.column import DatabendColumn
@@ -114,12 +113,13 @@ class DatabendAdapter(SQLAdapter):
         return exists
 
     def list_relations_without_caching(
-        self, schema_relation: DatabendRelation
+            self, schema_relation: DatabendRelation
     ) -> List[DatabendRelation]:
         kwargs = {"schema_relation": schema_relation}
         results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
 
         relations = []
+        print("%%",results.rows)
         for row in results:
             if len(row) != 4:
                 raise dbt.exceptions.RuntimeException(
@@ -154,7 +154,7 @@ class DatabendAdapter(SQLAdapter):
         return super().get_relation(database, schema, identifier)
 
     def parse_show_columns(
-        self, _relation: DatabendRelation, raw_rows: List[agate.Row]
+            self, _relation: DatabendRelation, raw_rows: List[agate.Row]
     ) -> List[DatabendColumn]:
         rows = [
             dict(zip(row._keys, row._values))  # pylint: disable=protected-access
@@ -199,10 +199,10 @@ class DatabendAdapter(SQLAdapter):
         return catalogs, exceptions
 
     def _get_one_catalog(
-        self,
-        information_schema: InformationSchema,
-        schemas: Set[str],
-        manifest: Manifest,
+            self,
+            information_schema: InformationSchema,
+            schemas: Set[str],
+            manifest: Manifest,
     ) -> agate.Table:
         if len(schemas) != 1:
             dbt.exceptions.raise_compiler_error(
@@ -212,11 +212,11 @@ class DatabendAdapter(SQLAdapter):
         return super()._get_one_catalog(information_schema, schemas, manifest)
 
     def update_column_sql(
-        self,
-        dst_name: str,
-        dst_column: str,
-        clause: str,
-        where_clause: Optional[str] = None,
+            self,
+            dst_name: str,
+            dst_column: str,
+            clause: str,
+            where_clause: Optional[str] = None,
     ) -> str:
         raise dbt.exceptions.NotImplementedException(
             "`update_column_sql` is not implemented for this adapter!"
@@ -224,6 +224,8 @@ class DatabendAdapter(SQLAdapter):
 
     def run_sql_for_tests(self, sql, fetch, conn):
         cursor = conn.handle.cursor()
+        print("^^^sjh")
+        print(cursor.fetchall())
         try:
             cursor.execute(sql)
             if fetch == "one":
@@ -242,13 +244,12 @@ class DatabendAdapter(SQLAdapter):
         finally:
             conn.transaction_open = False
 
-
     def get_rows_different_sql(
-        self,
-        relation_a: DatabendRelation,
-        relation_b: DatabendRelation,
-        column_names: Optional[List[str]] = None,
-        except_operator: str = "EXCEPT",
+            self,
+            relation_a: DatabendRelation,
+            relation_b: DatabendRelation,
+            column_names: Optional[List[str]] = None,
+            except_operator: str = "EXCEPT",
     ) -> str:
         names: List[str]
         if column_names is None:

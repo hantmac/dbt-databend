@@ -1,17 +1,33 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
-import dbt.exceptions # noqa
+
+import agate
+import dbt.exceptions  # noqa
 from dbt.adapters.base import Credentials
 import mysql.connector
 
 from dbt.adapters.sql import SQLConnectionManager as connection_cls
+from dbt.contracts.connection import AdapterResponse
 from dbt.events import AdapterLogger
-from typing import Optional
+from typing import Optional, Tuple, List, Any
 from databend_py import Client
-from clickhouse_sqlalchemy import make_session
+from databend_sqlalchemy import connector
 
+from dbt.exceptions import (
+    InternalException,
+    RuntimeException,
+    FailedToConnectException,
+    DatabaseException,
+)
 
 logger = AdapterLogger("databend")
+
+
+@dataclass
+class DatabendAdapterResponse(AdapterResponse):
+    pass
+
+
 @dataclass
 class DatabendCredentials(Credentials):
     """
@@ -32,10 +48,11 @@ class DatabendCredentials(Credentials):
     # password: str
 
     _ALIASES = {
-        "dbname":"database",
-        "pass":"password",
-        "user":"username"
+        "dbname": "database",
+        "pass": "password",
+        "user": "username"
     }
+
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -44,8 +61,8 @@ class DatabendCredentials(Credentials):
     def __post_init__(self):
         # mysql classifies database and schema as the same thing
         if (
-            self.database is not None and
-            self.database != self.schema
+                self.database is not None and
+                self.database != self.schema
         ):
             raise dbt.exceptions.RuntimeException(
                 f"    schema: {self.schema} \n"
@@ -53,6 +70,7 @@ class DatabendCredentials(Credentials):
                 f"On Databend, database must be omitted or have the same value as"
                 f" schema."
             )
+
     @property
     def type(self):
         """Return name of adapter."""
@@ -70,11 +88,11 @@ class DatabendCredentials(Credentials):
         """
         List of keys to display in the `dbt debug` output.
         """
-        return ("host","port","database", "schema", "user")
+        return ("host", "port", "database", "schema", "user")
+
 
 class DatabendConnectionManager(connection_cls):
     TYPE = "databend"
-
 
     @contextmanager
     def exception_handler(self, sql: str):
@@ -91,10 +109,20 @@ class DatabendConnectionManager(connection_cls):
             self.rollback_if_open()
             raise dbt.exceptions.RuntimeException(str(e))
 
+    # except for DML statements where explicitly defined
+    def add_begin_query(self, *args, **kwargs):
+        pass
+
+    def add_commit_query(self, *args, **kwargs):
+        pass
+
     def begin(self):
         pass
 
     def commit(self):
+        pass
+
+    def clear_transaction(self):
         pass
 
     @classmethod
@@ -110,12 +138,14 @@ class DatabendConnectionManager(connection_cls):
         credentials = connection.credentials
 
         try:
-            handle = mysql.connector.connect(
-                host=credentials.host,
-                port=credentials.port,
-                user=credentials.username,
-                password=credentials.password,
-            )
+            # handle = mysql.connector.connect(
+            #     # host=credentials.host,
+            #     # port=credentials.port,
+            #     # user=credentials.username,
+            #     # password=credentials.password,
+            # )
+            handle = connector.connect(
+                f'http://{credentials.username}:{credentials.password}@{credentials.host}:{credentials.port}')
         except Exception as e:
             logger.debug("Error opening connection: {}".format(e))
             connection.handle = None
@@ -126,23 +156,62 @@ class DatabendConnectionManager(connection_cls):
         return connection
 
     @classmethod
-    def get_response(cls,cursor):
-        """
-        Gets a cursor object and returns adapter-specific information
-        about the last executed command generally a AdapterResponse ojbect
-        that has items such as code, rows_affected,etc. can also just be a string ex. "OK"
-        if your cursor does not offer rich metadata.
-        """
-        # ## Example ##
-        return "OK"
-    
+    def get_response(cls, cursor) -> DatabendAdapterResponse:
+        # column_types = cursor.description
+        # column_names = []
+        # for ct in column_types:
+        #     column_names.append(ct[0])
+
+        return DatabendAdapterResponse(
+            _message="affect {}".format(cursor.rowcount),
+            rows_affected=cursor.rowcount,
+        )  # type: ignore
+
+    def execute(
+            self, sql: str, auto_begin: bool = False, fetch: bool = False
+    ) -> Tuple[AdapterResponse, agate.Table]:
+        # don't apply the query comment here
+        # it will be applied after ';' queries are split
+        _, cursor = self.add_query(sql, auto_begin)
+        print("sjh-execute", sql)
+        response = self.get_response(cursor)
+        # table: rows, column_names=None, column_types=None, row_names=None
+        if fetch:
+            table = self.get_result_from_cursor(cursor)
+            print("###\n", table.rows)
+        else:
+            table = dbt.clients.agate_helper.empty_table()
+        return response, table
+
+    def add_query(self, sql, auto_begin=True, bindings=None, abridge_sql_log=False):
+
+        connection, cursor = super().add_query(
+            sql, auto_begin, bindings=bindings, abridge_sql_log=abridge_sql_log
+        )
+
+        if cursor is None:
+            conn = self.get_thread_connection()
+            if conn is None or conn.name is None:
+                conn_name = "<None>"
+            else:
+                conn_name = conn.name
+
+            raise RuntimeException(
+                "Tried to run an empty query on model '{}'. If you are "
+                "conditionally running\nsql, eg. in a model hook, make "
+                "sure your `else` clause contains valid sql!\n\n"
+                "Provided SQL:\n{}".format(conn_name, sql)
+            )
+
+        return connection, cursor
+
     @classmethod
     def get_status(cls, _):
         """
         Returns connection status
         """
         return "OK"
-    
+
     @classmethod
     def get_credentials(cls, credentials):
         """
@@ -158,3 +227,23 @@ class DatabendConnectionManager(connection_cls):
         logger.debug("Cancelling query '{}'", connection_name)
         connection.handle.close()
         logger.debug("Cancel query '{}'", connection_name)
+
+    @classmethod
+    def process_results(cls, column_names, rows):
+        print("@@@\n", [dict(zip(column_names, row)) for row in rows])
+
+        return [dict(zip(column_names, row)) for row in rows]
+
+    @classmethod
+    def get_result_from_cursor(cls, cursor: Any) -> agate.Table:
+        data: List[Any] = []
+        column_names: List[str] = []
+
+        if cursor.description is not None:
+            column_names = [col[0] for col in cursor.description]
+            rows = cursor.fetchall()
+            data = cls.process_results(column_names, rows)
+            print("sjh-rows\n", rows)
+            print("sjh-column\n", column_names)
+
+        return dbt.clients.agate_helper.table_from_data_flat(data, column_names)

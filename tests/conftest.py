@@ -15,7 +15,7 @@ def dbt_profile_target():
     return {
         "type": "databend",
         "host": "localhost",
-        "port": 3307,
+        "port": 8081,
         "user": "root",
         "pass": "root",
         "schema": "default",
