@@ -54,5 +54,6 @@ class DatabendColumn(Column):
 
     def can_expand_to(self, other_column: "Column") -> bool:
         return self.is_string() and other_column.is_string()
+
     def __repr__(self) -> str:
         return "<DatabendColumn {} ({})>".format(self.name, self.data_type)

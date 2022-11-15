@@ -145,7 +145,7 @@ class DatabendConnectionManager(connection_cls):
             #     # password=credentials.password,
             # )
             handle = connector.connect(
-                f'http://{credentials.username}:{credentials.password}@{credentials.host}:{credentials.port}')
+                f'https://{credentials.username}:{credentials.password}@{credentials.host}:{credentials.port}')
         except Exception as e:
             logger.debug("Error opening connection: {}".format(e))
             connection.handle = None
@@ -173,18 +173,18 @@ class DatabendConnectionManager(connection_cls):
         # don't apply the query comment here
         # it will be applied after ';' queries are split
         _, cursor = self.add_query(sql, auto_begin)
-        print("sjh-execute", sql)
+        print("sjh-execute", sql, cursor)
         response = self.get_response(cursor)
         # table: rows, column_names=None, column_types=None, row_names=None
         if fetch:
             table = self.get_result_from_cursor(cursor)
-            print("###\n", table.rows)
         else:
             table = dbt.clients.agate_helper.empty_table()
         return response, table
 
-    def add_query(self, sql, auto_begin=True, bindings=None, abridge_sql_log=False):
-
+    def add_query(self, sql, auto_begin=False, bindings=None, abridge_sql_log=False):
+        print("bindings")
+        print(bindings)
         connection, cursor = super().add_query(
             sql, auto_begin, bindings=bindings, abridge_sql_log=abridge_sql_log
         )
@@ -230,7 +230,6 @@ class DatabendConnectionManager(connection_cls):
 
     @classmethod
     def process_results(cls, column_names, rows):
-        print("@@@\n", [dict(zip(column_names, row)) for row in rows])
 
         return [dict(zip(column_names, row)) for row in rows]
 
@@ -243,7 +242,7 @@ class DatabendConnectionManager(connection_cls):
             column_names = [col[0] for col in cursor.description]
             rows = cursor.fetchall()
             data = cls.process_results(column_names, rows)
-            print("sjh-rows\n", rows)
-            print("sjh-column\n", column_names)
+            print("sjh-rows", rows)
+            print("sjh-column", column_names)
 
         return dbt.clients.agate_helper.table_from_data_flat(data, column_names)
