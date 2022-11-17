@@ -21,11 +21,14 @@ class TestSimpleMaterializationsDatabend(BaseSimpleMaterializations):
 
 # class TestSingularTestsDatabend(BaseSingularTests):
 #     pass
+
+
 #
 #
 # class TestSingularTestsEphemeralDatabend(BaseSingularTestsEphemeral):
 #     pass
-#
+
+
 #
 class TestEmptyDatabend(BaseEmpty):
     pass
@@ -33,28 +36,40 @@ class TestEmptyDatabend(BaseEmpty):
 
 #
 #
-# # class TestEphemeralDatabend(BaseEphemeral):
-# #     pass
-#
-#
-# class TestIncrementalDatabend(BaseIncremental):
+# class TestEphemeralDatabend(BaseEphemeral):
 #     pass
+#
+#
+# #
+# #
+class TestIncrementalDatabend(BaseIncremental):
+    pass
+
+
 #
 #
 # class TestGenericTestsDatabend(BaseGenericTests):
 #     pass
+
+
 #
 #
-# # class TestSnapshotCheckColsDatabend(BaseSnapshotCheckCols):
-# #     pass
+class TestSnapshotCheckColsDatabend(BaseSnapshotCheckCols):
+    pass
+
+
 #
 #
-# # class TestSnapshotTimestampDatabend(BaseSnapshotTimestamp):
-# #     pass
+class TestSnapshotTimestampDatabend(BaseSnapshotTimestamp):
+    pass
+
+
 #
 #
 # class TestBaseAdapterMethodDatabend(BaseAdapterMethod):
 #     pass
+
+
 # CSV content with boolean column type.
 seeds_boolean_csv = """
 key,value
@@ -76,13 +91,12 @@ klm,1,0
 klm,1,
 """.lstrip()
 
-
-class TestCSVSeed:
-    @pytest.fixture(scope="class")
-    def seeds(self):
-        return {"boolean.csv": seeds_boolean_csv, "empty.csv": seeds_empty_csv}
-
-    def test_seed(self, project):
-        # seed command
-        results = run_dbt(["seed"])
-        assert len(results) == 2
+# class TestCSVSeed:
+#     @pytest.fixture(scope="class")
+#     def seeds(self):
+#         return {"boolean.csv": seeds_boolean_csv, "empty.csv": seeds_empty_csv}
+#
+#     def test_seed(self, project):
+#         # seed command
+#         results = run_dbt(["seed"])
+#         assert len(results) == 2

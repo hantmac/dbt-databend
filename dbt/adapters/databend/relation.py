@@ -7,11 +7,12 @@ from dbt.contracts.relation import (
     Path
 )
 
+
 @dataclass
 class DatabendQuotePolicy(Policy):
     database: bool = False
-    schema: bool = True
-    identifier: bool = True
+    schema: bool = False
+    identifier: bool = False
 
 
 @dataclass
@@ -40,6 +41,7 @@ class DatabendRelation(BaseRelation):
                 "include, but only one can be set"
             )
         return super().render()
+
     @classmethod
     def get_path(cls, relation: BaseRelation, information_schema_view: Optional[str]) -> Path:
         return Path(
@@ -47,3 +49,15 @@ class DatabendRelation(BaseRelation):
             schema=relation.schema,
             identifier="INFORMATION_SCHEMA",
         )
+
+    def matches(
+            self,
+            database: Optional[str] = None,
+            schema: Optional[str] = None,
+            identifier: Optional[str] = None,
+    ):
+        if database:
+            raise dbt.exceptions.RuntimeException(
+                f'Passed unexpected schema value {schema} to Relation.matches'
+            )
+        return self.schema == schema and self.identifier == identifier

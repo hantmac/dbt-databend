@@ -169,7 +169,7 @@ class DatabendAdapter(SQLAdapter):
             for column in rows
         ]
 
-    def get_columns_in_relation(self, relation: DatabendRelation) -> List[DatabendRelation]:
+    def get_columns_in_relation(self, relation: DatabendRelation) -> List[DatabendColumn]:
         rows: List[agate.Row] = super().get_columns_in_relation(relation)
 
         return self.parse_show_columns(relation, rows)
@@ -224,8 +224,6 @@ class DatabendAdapter(SQLAdapter):
 
     def run_sql_for_tests(self, sql, fetch, conn):
         cursor = conn.handle.cursor()
-        print("^^^sjh")
-        print(cursor.fetchall())
         try:
             cursor.execute(sql)
             if fetch == "one":

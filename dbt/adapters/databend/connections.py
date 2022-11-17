@@ -58,6 +58,13 @@ class DatabendCredentials(Credentials):
             setattr(self, k, v)
             self.database = None
 
+    @classmethod
+    def __pre_deserialize__(cls, data):
+        data = super().__pre_deserialize__(data)
+        if "database" not in data:
+            data["database"] = None
+        return data
+
     def __post_init__(self):
         # mysql classifies database and schema as the same thing
         if (
@@ -70,6 +77,7 @@ class DatabendCredentials(Credentials):
                 f"On Databend, database must be omitted or have the same value as"
                 f" schema."
             )
+        self.database = None
 
     @property
     def type(self):
@@ -156,24 +164,16 @@ class DatabendConnectionManager(connection_cls):
         return connection
 
     @classmethod
-    def get_response(cls, cursor) -> DatabendAdapterResponse:
-        # column_types = cursor.description
-        # column_names = []
-        # for ct in column_types:
-        #     column_names.append(ct[0])
-
-        return DatabendAdapterResponse(
-            _message="affect {}".format(cursor.rowcount),
-            rows_affected=cursor.rowcount,
-        )  # type: ignore
+    def get_response(cls, _):
+        return 'OK'
 
     def execute(
             self, sql: str, auto_begin: bool = False, fetch: bool = False
     ) -> Tuple[AdapterResponse, agate.Table]:
         # don't apply the query comment here
         # it will be applied after ';' queries are split
+        print("sjh-execute", sql)
         _, cursor = self.add_query(sql, auto_begin)
-        print("sjh-execute", sql, cursor)
         response = self.get_response(cursor)
         # table: rows, column_names=None, column_types=None, row_names=None
         if fetch:
@@ -184,7 +184,6 @@ class DatabendConnectionManager(connection_cls):
 
     def add_query(self, sql, auto_begin=False, bindings=None, abridge_sql_log=False):
         print("bindings")
-        print(bindings)
         connection, cursor = super().add_query(
             sql, auto_begin, bindings=bindings, abridge_sql_log=abridge_sql_log
         )
@@ -244,5 +243,6 @@ class DatabendConnectionManager(connection_cls):
             data = cls.process_results(column_names, rows)
             print("sjh-rows", rows)
             print("sjh-column", column_names)
+            print("sjh-type", [col[1] for col in cursor.description])
 
         return dbt.clients.agate_helper.table_from_data_flat(data, column_names)
