@@ -13,11 +13,11 @@ pytest_plugins = ["dbt.tests.fixtures.project"]
 @pytest.fixture(scope="class")
 def dbt_profile_target():
     return {
-        "type": "databend",
-        "host": "localhost",
-        "port": 8081,
-        "user": "root",
-        "pass": "root",
-        "schema": "default",
-        "dbname": "default",
+        # "type": "databend",
+        # "host": "localhost",
+        # "port": 8081,
+        # "user": "root",
+        # "pass": "root",
+        # "schema": "default",
+        # "dbname": "default",
     }

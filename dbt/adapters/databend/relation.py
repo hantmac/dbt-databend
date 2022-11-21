@@ -29,9 +29,13 @@ class DatabendRelation(BaseRelation):
     quote_character: str = ""
 
     def __post_init__(self):
+        print(self.database, self.schema)
         if self.database != self.schema and self.database:
             raise dbt.exceptions.RuntimeException(
-                f"Cannot set database {self.database} in databend!"
+                f"    schema: {self.schema} \n"
+                f"    database: {self.database} \n"
+                f"On Databend, database must be omitted or have the same value as"
+                f" schema."
             )
 
     def render(self):

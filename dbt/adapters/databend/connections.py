@@ -66,7 +66,8 @@ class DatabendCredentials(Credentials):
         return data
 
     def __post_init__(self):
-        # mysql classifies database and schema as the same thing
+        # databend classifies database and schema as the same thing
+        self.database = None
         if (
                 self.database is not None and
                 self.database != self.schema
@@ -77,7 +78,6 @@ class DatabendCredentials(Credentials):
                 f"On Databend, database must be omitted or have the same value as"
                 f" schema."
             )
-        self.database = None
 
     @property
     def type(self):
