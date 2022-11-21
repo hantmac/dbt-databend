@@ -20,7 +20,8 @@ pytz
 tox>=3.13
 twine
 wheel
-databend-py==0.1.2
+databend-py==0.2.4
+databend-sqlalchemy==0.0.5
 environs
 mysql-connector-python>=8.0.0,<8.1
 backports.zoneinfo==0.2.1
